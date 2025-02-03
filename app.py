@@ -7,14 +7,14 @@ G = 6.674 * 10**-11  # m^3/kg/s^2
 
 st.title("Kalkulator Gravitasi Berdasarkan Kedalaman")
 
-st.write("""
-Aplikasi ini menghitung percepatan gravitasi berdasarkan kedalaman dan densitas lapisan bumi.
-Silakan masukkan data kedalaman dan densitas atau gunakan nilai default.
-""")
+#st.write("""
+#Aplikasi ini menghitung percepatan gravitasi berdasarkan kedalaman dan densitas lapisan bumi.
+#Silakan masukkan data kedalaman dan densitas atau gunakan nilai default.
+#""")
 
 # Dataset otomatis untuk kedalaman dan densitas (hingga 50 km)
-default_kedalaman = "0,5000,10000,15000,20000,25000,30000,35000,40000,45000,50000"
-default_densitas = "2600,2700,2800,2900,3000,3100,3200,3300,3400,3500,3600"
+default_kedalaman = " "
+default_densitas = " "
 
 # Input dari pengguna
 kedalaman_input = st.text_area("Masukkan kedalaman (meter, pisahkan dengan koma):", default_kedalaman)

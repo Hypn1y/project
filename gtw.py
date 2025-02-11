@@ -2,60 +2,56 @@ import streamlit as st
 import pandas as pd
 import cv2
 import os
-import numpy as np
 from datetime import datetime
+from PIL import Image
 
-# Direktori untuk menyimpan foto
-PHOTO_DIR = "photos"
-os.makedirs(PHOTO_DIR, exist_ok=True)
+# Folder penyimpanan
+DATA_FOLDER = "guestbook_data"
+IMG_FOLDER = os.path.join(DATA_FOLDER, "images")
+CSV_FILE = os.path.join(DATA_FOLDER, "guestbook.csv")
 
-# File CSV untuk menyimpan data tamu
-DATA_FILE = "buku_tamu.csv"
+# Pastikan folder ada
+os.makedirs(IMG_FOLDER, exist_ok=True)
 
-# Fungsi untuk menyimpan data ke CSV
-def save_to_csv(data):
-    if not os.path.exists(DATA_FILE):
-        df = pd.DataFrame([data])
-        df.to_csv(DATA_FILE, index=False)
+# Load atau buat data
+if os.path.exists(CSV_FILE):
+    guestbook_df = pd.read_csv(CSV_FILE)
+else:
+    guestbook_df = pd.DataFrame(columns=["Nama", "Waktu", "Foto"])
+
+st.title("Buku Tamu")
+
+# Form input
+nama = st.text_input("Nama:")
+ambil_foto = st.button("Ambil Foto")
+
+if ambil_foto and nama:
+    # Ambil gambar dari webcam
+    cam = cv2.VideoCapture(0)
+    ret, frame = cam.read()
+    if ret:
+        filename = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{nama}.jpg"
+        filepath = os.path.join(IMG_FOLDER, filename)
+        cv2.imwrite(filepath, frame)
+        cam.release()
+        st.image(frame, caption="Foto Anda", use_column_width=True)
+        
+        # Simpan ke CSV
+        new_entry = pd.DataFrame([[nama, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), filename]], columns=["Nama", "Waktu", "Foto"])
+        guestbook_df = pd.concat([guestbook_df, new_entry], ignore_index=True)
+        guestbook_df.to_csv(CSV_FILE, index=False)
+        st.success("Data berhasil disimpan!")
     else:
-        df = pd.read_csv(DATA_FILE)
-        df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
-        df.to_csv(DATA_FILE, index=False)
+        st.error("Gagal mengambil gambar")
+    cam.release()
 
-# Tampilan di Streamlit
-st.title("📖 Buku Tamu Digital")
-
-# Form Input
-nama = st.text_input("Nama", placeholder="Masukkan nama lengkap Anda")
-instansi = st.text_input("Instansi/Jabatan", placeholder="Masukkan instansi atau jabatan Anda")
-keperluan = st.text_area("Keperluan", placeholder="Tulis keperluan kunjungan Anda")
-
-# Kamera untuk menangkap foto
-image_file = st.camera_input("Ambil Foto Wajah Anda")
-
-# Tombol Kirim
-if st.button("Kirim"):
-    if nama and instansi and keperluan and image_file:
-        img = cv2.imdecode(np.frombuffer(image_file.getvalue(), np.uint8), 1)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        photo_filename = f"{nama.replace(' ', '_')}_{timestamp}.jpg"
-        photo_path = os.path.join(PHOTO_DIR, photo_filename)
-
-        # Simpan gambar
-        cv2.imwrite(photo_path, img)
-
-        # Simpan data ke CSV
-        new_entry = {
-            "Nama": nama,
-            "Instansi": instansi,
-            "Keperluan": keperluan,
-            "Foto": photo_path,
-            "Waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-        save_to_csv(new_entry)
-
-        st.success(f"Terima kasih, {nama}! Data Anda telah disimpan.")
-        st.image(img, caption="Foto Wajah Anda", use_container_width=True)
-
-    else:
-        st.error("Semua kolom dan foto wajib diisi!")
+# Tampilkan daftar tamu
+st.subheader("Daftar Tamu")
+if not guestbook_df.empty:
+    for _, row in guestbook_df.iterrows():
+        st.write(f"**{row['Nama']}** - {row['Waktu']}")
+        img_path = os.path.join(IMG_FOLDER, row['Foto'])
+        if os.path.exists(img_path):
+            st.image(Image.open(img_path), caption=row['Nama'], use_column_width=True)
+else:
+    st.write("Belum ada tamu yang mengisi.")

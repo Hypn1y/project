@@ -1,7 +1,4 @@
 streamlit
-numpy
-scipy
-cv2
 pandas
-os
-datetime
+opencv-python
+pillow
